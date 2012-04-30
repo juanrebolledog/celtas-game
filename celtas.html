@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>celtas</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Juan Francisco Rebolledo Gómez">
+	<script type="text/javascript" charset="utf-8" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="celtas_engine.js"></script>
+	<style type="text/css" media="screen">
+	   * {
+	       margin: 0;
+	       padding: 0;
+	   }
+	   h1 {
+	       margin: auto;
+	       width: 560px;
+	       text-align: center;
+	   }
+	   div#CeltasBoard {
+	       margin: auto;
+	       width: 560px;
+	   }
+	   div#BoardContainer {
+	       float: left;
+	   }
+	   div#BoardContainer div {
+	       width: 80px;
+	       height: 80px;
+	       float: left;
+	   }
+	   div#CeltasBoard div.null {
+	       background-color: black;
+	   }
+	   div#CeltasBoard div.full {
+           background-image: url(piece.png);
+           background-repeat: no-repeat;
+   	   }
+   	   div#CeltasBoard div.empty {
+           background-color: green;
+   	   }
+   	   div#CeltasBoard div.drop-hover {
+   	       background-color: yellow;
+   	   }
+	</style>
+</head>
+<body>
+<h1>Celtas</h1>
+<div id="CeltasBoard">
+    <div id="BoardContainer"></div>
+</div>
+<script type="text/javascript" charset="utf-8">
+
+(function () {
+    
+    var CeltaClient = {
+        
+        init: function ( config ) {
+            self = this;
+            this.config = {
+                engine: {
+                    gameType: 'celtas'
+                },
+                client: {
+                    container: $('#celtas')
+                }
+            };
+            $.extend( this.config, config );
+            this.engine = Celta.init( config.engine );
+            this.container = this.config.client.container;
+            this.boardContainer = this.container.find('div#BoardContainer');
+            $.each( this.engine.board, function () {
+                $.each( this, function () {
+                    $('<div>&nbsp;</div>')
+                        .attr({ class: this.type, id: this.position.x + '-' + this.position.y })
+                        .html( this.position.x + '-' + this.position.y )
+                        .appendTo( self.boardContainer );
+                });
+            });
+            this.registerBoard();
+        },
+        
+        registerBoard: function () {
+            var pieces = this.boardContainer.find('div'),
+                self = this;
+            pieces.each(function() {
+                var piece = $(this);
+                self.assignDrop( piece );
+                self.assignDrag( piece );
+            });
+        },
+        
+        assignDrag: function ( element ) {
+            self = this;
+            element.draggable({
+                revert: true,
+                containment: self.boardContainer
+            });
+            return element;
+        },
+        
+        assignDrop: function ( element ) {
+            element.droppable({
+                drop: function ( event, ui ) {
+                    self.move( $(ui.draggable.context).attr('id'), $(this).attr('id') );
+                },
+                hoverClass: 'drop-hover'
+            });
+            return element;
+        },
+        
+        move: function ( from, to ) {
+            self = this;
+            var mvmt = this.engine.move( from, to );
+
+            if ( mvmt.valid ) {
+                $.each( mvmt.pieces, function () {
+                    var piece = $('#' + this.position.x + '-' + this.position.y );
+                    piece.attr( 'class', this.type );
+                    if ( this.type == 'empty' ) {
+                        piece.draggable( 'disable' );
+                        piece.droppable( 'enable' );
+                    }
+                    if ( this.type == 'full' ) {
+                        piece.droppable( 'disable' );
+                        piece.draggable( 'enable' );
+                    }
+                });
+            }
+        },
+        
+        
+    };
+    
+    CeltaClient.init({
+        engine: {
+            gameType: 'celtas'
+        },
+        client: {
+            container: $('#CeltasBoard')
+        }
+    });
+
+})();
+
+</script>
+</body>
+</html>
